@@ -1,0 +1,18 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - FLASK_ENV=development
+    volumes:
+      - ./data:/data  # mount as /data
+      - ./logs:/app/logs 
+  frontend:
+    build: ./frontend
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
+    volumes:
+      - ./data:/data  # mount as /data
