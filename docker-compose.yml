@@ -2,17 +2,35 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "8001:8001"
     environment:
       - FLASK_ENV=development
+    depends_on:
+      - gnn_inference
     volumes:
       - ./data:/data  # mount as /data
       - ./logs:/app/logs 
   frontend:
     build: ./frontend
     ports:
-      - "8501:8501"
+      - "8502:8502"
     depends_on:
       - backend
     volumes:
       - ./data:/data  # mount as /data
+
+  gnn-inference:
+    build:
+      context: ./gnn_inference
+    container_name: gnn_inference
+    ports:
+      - "9000:9000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./gnn_inference:/app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]  # Optional: Only works with --gpus flag and NVIDIA runtime

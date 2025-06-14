@@ -7,6 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-EXPOSE 8501
+EXPOSE 8502
 
-CMD ["streamlit", "run", "Setup_Page.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "Setup_Page.py", "--server.port=8502", "--server.address=0.0.0.0"]

@@ -15,4 +15,4 @@ data/*
 .pyc
 
 # Ignore GNN_models
-backend/GNN_models/*
+gnn_inference/GNN_models/*
