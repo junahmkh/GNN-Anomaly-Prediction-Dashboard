@@ -8,7 +8,7 @@ services:
     depends_on:
       - gnn_inference
     volumes:
-      - ./data:/data  # mount as /data
+      - ./data/m100_aggregated:/data  # mount as /data
       - ./logs:/app/logs 
   frontend:
     build: ./frontend
@@ -17,7 +17,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./data:/data  # mount as /data
+      - ./data/m100_aggregated:/data  # mount as /data
 
   gnn-inference:
     build:

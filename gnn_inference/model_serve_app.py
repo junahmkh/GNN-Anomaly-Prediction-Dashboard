@@ -4,7 +4,7 @@ import torch
 from torch_geometric.data import Data
 from load_models import load_all_models
 
-models, device = load_all_models(in_channels=32, out_channels=16)
+models, device = load_all_models(in_channels=417, out_channels=16)
 app = FastAPI()
 
 class GraphInput(BaseModel):

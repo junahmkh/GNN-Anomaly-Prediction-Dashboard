@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 8502
 
-CMD ["streamlit", "run", "Setup_Page.py", "--server.port=8502", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "overview.py", "--server.port=8502", "--server.address=0.0.0.0"]
