@@ -1,7 +1,7 @@
-torch-geometric==2.5.2
-torch-scatter==2.1.2
-torch-sparse==0.6.18
-fastapi==0.95.2
-uvicorn==0.22.0
-pydantic==2.7.1
-click
+torch
+torch-geometric
+fastapi
+uvicorn
+requests
+pydantic
+

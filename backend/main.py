@@ -5,8 +5,8 @@ import requests
 from fastapi import FastAPI, HTTPException
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from data_fetch import data_fetch
-from data_preprocessing import pre_process
+from .data_fetch import data_fetch
+from .data_preprocessing import pre_process
 
 app = FastAPI()
 

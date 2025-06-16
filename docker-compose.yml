@@ -21,7 +21,6 @@ services:
       - backend
     volumes:
       - ./data/m100_aggregated:/data  # mount as /data
-
   gnn_inference:
     build:
       context: ./gnn_inference
@@ -31,9 +30,9 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./gnn_inference:/app
+      - ./GNN_models:/app/GNN_models     # Mount models from host
     deploy:
       resources:
         reservations:
           devices:
-            - capabilities: [gpu]  # Optional: Only works with --gpus flag and NVIDIA runtime
+            - capabilities: [gpu]
