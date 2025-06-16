@@ -30,7 +30,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./GNN_models:/app/GNN_models     # Mount models from host
+      - ./gnn_inference/GNN_models:/app/GNN_models     # Mount models from host
     deploy:
       resources:
         reservations:

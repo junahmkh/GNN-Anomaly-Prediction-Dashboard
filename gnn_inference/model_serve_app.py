@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import torch
 from torch_geometric.data import Data
-from .load_models import load_all_models
+from load_models import load_all_models
 
 models, device = load_all_models()
 app = FastAPI()

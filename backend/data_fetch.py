@@ -18,7 +18,7 @@ def get_node_name(file_path):
     return int(node)
 
 def data_fetch(rack, ts):
-    data_dir = f"../data/m100_aggregated/{rack}/"
+    data_dir = f"/data/{rack}/"
 
     with open("col_list.pickle","rb") as f:
         cols = pickle.load(f)
