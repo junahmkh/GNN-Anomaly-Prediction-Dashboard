@@ -1,15 +1,18 @@
 services:
   backend:
     build: ./backend
+    container_name: gnn_backend
     ports:
       - "8001:8001"
     environment:
-      - FLASK_ENV=development
+      - ENV=development
     depends_on:
       - gnn_inference
     volumes:
-      - ./data/m100_aggregated:/data  # mount as /data
-      - ./logs:/app/logs 
+      - ./data/m100_aggregated:/data      # Mount data directory
+      - ./logs:/app/logs                  # Mount logs directory
+      - ./storage:/app/storage
+    restart: unless-stopped
   frontend:
     build: ./frontend
     ports:
@@ -19,12 +22,12 @@ services:
     volumes:
       - ./data/m100_aggregated:/data  # mount as /data
 
-  gnn-inference:
+  gnn_inference:
     build:
       context: ./gnn_inference
     container_name: gnn_inference
     ports:
-      - "9000:9000"
+      - "10000:10000"
     environment:
       - PYTHONUNBUFFERED=1
     volumes:

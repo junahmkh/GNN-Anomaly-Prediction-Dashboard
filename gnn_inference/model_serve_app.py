@@ -12,8 +12,8 @@ class GraphInput(BaseModel):
     edge_index: list[list[int]]
 
 @app.post("/predict/{fw}/{model_id}")
-def predict(fw: str, model_id: int, graph_input: GraphInput):
-    key = f"{fw}/model_{model_id}"
+def predict(fw: int, model_id: int, graph_input: GraphInput):
+    key = f"{fw}/rack_{model_id}"
     model = models.get(key)
 
     if not model:

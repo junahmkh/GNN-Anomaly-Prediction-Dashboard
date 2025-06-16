@@ -4,7 +4,7 @@ from model import anomaly_anticipation
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def load_all_models(base_dir="GNN_models", in_channels=32, out_channels=16):
+def load_all_models(in_channels, out_channels, base_dir="GNN_models"):
     models = {}
     for fw in [4,6,12,24,32,64,96,192,288]:
         for i in range(3):
@@ -14,5 +14,5 @@ def load_all_models(base_dir="GNN_models", in_channels=32, out_channels=16):
                 model.load_state_dict(torch.load(model_path, map_location=device))
                 model.to(device)
                 model.eval()
-                models[model_path] = model
+                models[f"{fw}/rack_{i}"] = model
     return models, device

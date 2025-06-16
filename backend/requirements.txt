@@ -1,4 +1,8 @@
-Flask
+fastapi
+uvicorn
 requests
+apscheduler
 pandas
-torch_geometric
+torch
+scikit-learn
+click

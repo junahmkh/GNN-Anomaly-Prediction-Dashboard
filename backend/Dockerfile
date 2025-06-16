@@ -1,13 +1,17 @@
+# Use an official Python base image
 FROM python:3.11-slim
 
+# Set working directory
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
+# Copy project files
 COPY . .
 
-ENV FLASK_APP=main.py
-ENV FLASK_RUN_HOST=0.0.0.0
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["flask", "run", "--port=8000"]
+# Expose port
+EXPOSE 8001
+
+# Run the FastAPI app with Uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
