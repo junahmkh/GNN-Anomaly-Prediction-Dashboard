@@ -29,6 +29,8 @@ logger = logging.getLogger(__name__)
 with open("common_ts.pickle", "rb") as f:
     timestamps = pickle.load(f)
 
+timestamps = sorted(timestamps)
+
 index = 0  # pointer to next timestamp
 
 # File path to store latest predictions persistently
@@ -59,7 +61,7 @@ def run_scheduled_prediction():
     ts = timestamps[index]
     logger.info(f"Processing telemetry data for timestamp: {ts}")
 
-    for rack in [0, 1, 2]:
+    for rack in [0,2,8]:
         try:
             fetched_df = data_fetch(rack, ts)
             graph_payload = pre_process(fetched_df)

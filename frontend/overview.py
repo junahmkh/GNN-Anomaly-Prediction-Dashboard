@@ -1,101 +1,94 @@
 import streamlit as st
 import plotly.graph_objects as go
 import numpy as np
-from datetime import datetime, timedelta
 import requests
+import time
 
 # ------------------ Constants ------------------
-fw_ids = [f"FW_{i}" for i in [4,6,12,24,32,64,96,192,288]]
-node_ids = [f"node_{i:02d}" for i in range(1, 21)]
+fw_values = [4, 6, 12, 24, 32, 64, 96, 192, 288]
+fw_ids = [f"FW_{fw}" for fw in fw_values]
+rack_ids = ["0", "2", "8"]
 threshold = 0.1
-num_points = 30  # how many time points to plot
-backend_url = "http://backend:8001"  # change to your backend URL
+backend_url = "http://backend:8001"
 
-# ------------------ Fetch data from backend ------------------
-def fetch_predictions_for_rack(rack: int):
+# ------------------ Auto Refresh ------------------
+from streamlit_autorefresh import st_autorefresh
+st_autorefresh(interval=5000, key="auto-refresh")
+
+st.title("Anomaly Heatmap (Rack 0, 2, 8)")
+#st.write("Auto-refreshing every 5 seconds")
+
+# ------------------ Fetch + Wait for Data ------------------
+def fetch_predictions_for_rack(rack_id):
     try:
-        response = requests.get(f"{backend_url}/results/{rack}", timeout=5)
+        response = requests.get(f"{backend_url}/results/{rack_id}", timeout=5)
         response.raise_for_status()
-        data = response.json()
-        return data["predictions"]
+        return response.json()
     except Exception as e:
-        st.warning(f"Could not fetch predictions for rack {rack}: {e}")
+        st.warning(f"Failed to fetch rack {rack_id}: {e}")
         return []
 
-# ------------------ Mock Data Generator ------------------
-def generate_mock_rack_data(num_points=30):
-    from random import uniform
-    racks = []
-    now = datetime.utcnow()
-    for i in range(3, 50):  # start from rack 3, since 0,1,2 are actual data
-        rack_id = f"{i:02d}"
-        history = {}
-        for fw in [4,6,12,24,32,64,96,192,288]:
-            fw_id = f"FW_{fw}"
-            history[fw_id] = {
-                f"node_{n:02d}": [
-                    {
-                        "timestamp": (now - timedelta(minutes=5 * j)).isoformat(),
-                        "score": round(uniform(0, 1), 2)
-                    }
-                    for j in range(num_points)
-                ]
-                for n in range(1, 21)
-            }
-        racks.append({"id": rack_id, "history": history})
-    return racks
+def fetch_predictions_for_rack_with_wait(rack_id, max_wait=60, interval=2):
+    """Try fetching predictions repeatedly until non-empty or max_wait seconds elapsed."""
+    start = time.time()
+    while True:
+        data = fetch_predictions_for_rack(rack_id)
+        if data and data != []:
+            # Also check if 'predictions' key exists and is non-empty list if data is dict
+            if isinstance(data, dict) and data.get("predictions"):
+                return data
+            # Or if data is already a list with items
+            if isinstance(data, list) and len(data) > 0:
+                return data
+        if time.time() - start > max_wait:
+            return data
+        time.sleep(interval)
 
-# ------------------ Build rack data with actual + mock ------------------
-rack_data = []
-
-# Add real data racks 0,1,2
-for rack_id in [0,1,2]:
-    predictions = fetch_predictions_for_rack(rack_id)
-    # Convert predictions list (dicts with timestamp, fw, prediction) to the "history" structure expected below
-    # We'll build a dict: {fw_id: {node_id: list of {timestamp, score}}}
-    history = {}
-    for fw in [4,6,12,24,32,64,96,192,288]:
-        fw_id = f"FW_{fw}"
-        # For each fw, collect predictions for this rack and fw
-        relevant_preds = [p for p in predictions if p["fw"] == fw]
-        # We don't have node-wise split in your current model output, so we'll simulate node scores equally:
-        # Use the prediction value for all nodes, or simulate variation if desired.
-        node_scores = {}
-        for node_idx in range(1, 21):
-            node_id = f"node_{node_idx:02d}"
-            # Each prediction corresponds to a timestamp, but we may have multiple timestamps.
-            # So collect scores per timestamp:
-            scores = []
-            for p in relevant_preds[-num_points:]:  # last N predictions
-                # Assuming p["prediction"] is a list of floats per node? If not, use average or single value:
-                if isinstance(p["prediction"], list):
-                    score_val = p["prediction"][node_idx % len(p["prediction"])]
-                else:
-                    score_val = float(p["prediction"])  # fallback to single value
-                scores.append({"timestamp": p["timestamp"], "score": score_val})
-            node_scores[node_id] = scores
-        history[fw_id] = node_scores
-
-    rack_data.append({"id": str(rack_id), "history": history})
-
-# Add mock racks 3..49
-rack_data.extend(generate_mock_rack_data(num_points=num_points))
-
-rack_ids = [rack["id"] for rack in rack_data]
-
-# ------------------ Calculate anomaly counts ------------------
+# ------------------ Build Anomaly Matrix ------------------
 anomaly_counts = np.zeros((len(rack_ids), len(fw_ids)), dtype=int)
+all_latest_timestamps = []
 
-for rack_idx, rack in enumerate(rack_data):
-    for fw_idx, fw_id in enumerate(fw_ids):
-        count = 0
-        for node_id in node_ids:
-            latest_score = rack["history"][fw_id][node_id][0]["score"]
-            if latest_score < threshold:
-                count += 1
-        anomaly_counts[rack_idx, fw_idx] = count
+for rack_idx, rack_id in enumerate(rack_ids):
+    predictions = fetch_predictions_for_rack_with_wait(rack_id)
 
-# ------------------ Plot ------------------
+    latest_by_fw = {}
+
+    # Defensive: if predictions is list (old format?), convert to dict with 'predictions' key
+    if isinstance(predictions, list):
+        predictions_dict = {"predictions": predictions}
+    else:
+        predictions_dict = predictions
+
+    for pred in predictions_dict.get("predictions", []):
+        fw = pred["fw"]
+        ts = pred["timestamp"]
+        if fw not in latest_by_fw or ts > latest_by_fw[fw]["timestamp"]:
+            latest_by_fw[fw] = pred
+
+    if latest_by_fw:
+        rack_latest = max(pred["timestamp"] for pred in latest_by_fw.values())
+        all_latest_timestamps.append(rack_latest)
+    else:
+        all_latest_timestamps.append(None)
+
+    for fw in fw_values:
+        if fw in latest_by_fw:
+            pred_obj = latest_by_fw[fw]["prediction"]
+            if isinstance(pred_obj, dict) and "prediction" in pred_obj:
+                preds = pred_obj["prediction"]
+                for score in preds:
+                    if score > threshold:
+                        anomaly_counts[rack_idx, fw_ids.index(f"FW_{fw}")] += 1
+
+# Compute overall latest timestamp
+valid_timestamps = [ts for ts in all_latest_timestamps if ts is not None]
+if valid_timestamps:
+    overall_latest = max(valid_timestamps)
+    st.write(f"#### Latest Timestamp: {overall_latest}")
+else:
+    st.write("#### No predictions available yet.")
+
+# ------------------ Plot Heatmap ------------------
 fig = go.Figure(data=go.Heatmap(
     z=anomaly_counts,
     x=fw_ids,
@@ -104,12 +97,17 @@ fig = go.Figure(data=go.Heatmap(
     colorbar=dict(title='Anomaly Count'),
     hovertemplate='Rack: %{y}<br>FW: %{x}<br>Anomalies: %{z}<extra></extra>'
 ))
+
 fig.update_layout(
-    height=700,
-    yaxis_autorange='reversed',
-    title="Anomaly Counts Heatmap (Racks vs Forecast Windows)",
-    xaxis_title="Forecast Window",
-    yaxis_title="Rack"
+    height=600,
+    title="Anomaly Counts Heatmap",
+    xaxis_title="Future Window",
+    yaxis_title="Rack",
+    yaxis=dict(
+        tickmode='array',
+        tickvals=rack_ids,
+        ticktext=rack_ids
+    )
 )
 
 st.plotly_chart(fig, use_container_width=True)

@@ -3,63 +3,113 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
-from random import uniform
+import requests
+from datetime import datetime
+from streamlit_autorefresh import st_autorefresh
 
-# ------------------ Mock Data Generator ------------------
-def generate_mock_rack_data(num_points=30):
-    racks = []
-    now = datetime.utcnow()
-    for i in range(1, 50):
-        rack_id = f"{i:02d}"
-        history = {}
-        for fw in [4,6,12,24,32,64,96,192,288]:
-            fw_id = f"FW_{fw}"
-            history[fw_id] = {
-                f"node_{n:02d}": [
-                    {
-                        "timestamp": (now - timedelta(minutes=5 * j)).isoformat(),
-                        "score": round(uniform(0, 1), 2)
-                    }
-                    for j in range(num_points)
-                ]
-                for n in range(1, 21)
-            }
-        racks.append({"id": rack_id, "history": history})
-    return racks
+st.set_page_config(layout="wide", page_title="GNN Inference: Anomaly Prediction on M100 Data")
 
-# ------------------ Setup ------------------
-rack_data = generate_mock_rack_data()
-rack_ids = [rack["id"] for rack in rack_data]
-fw_ids = [f"FW_{i}" for i in [4,6,12,24,32,64,96,192,288]]
-node_ids = [f"node_{i:02d}" for i in range(1, 21)]
+# ------------------ Constants ------------------
+backend_url = "http://backend:8001"
+rack_ids = ["0", "2", "8"]
+fw_values = [4,6,12,24,32,64,96,192,288]
+fw_ids = [f"FW_{fw}" for fw in fw_values]
 threshold = 0.1
 
-# ------------------ UI ------------------
-st.set_page_config(layout="wide", page_title="GNN Inference: Anomaly Prediction on M100 data")
+# ------------------ Auto Refresh ------------------
+st_autorefresh(interval=5000, key="auto-refresh")
+
+# ------------------ Helper: Fetch predictions ------------------
+@st.cache_data(ttl=30)
+def fetch_predictions(rack_id):
+    try:
+        response = requests.get(f"{backend_url}/results/{rack_id}", timeout=5)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        st.warning(f"Failed to fetch predictions for rack {rack_id}: {e}")
+        return []
+
+# ------------------ Helper: Infer node IDs from prediction array ------------------
+def extract_node_ids(predictions):
+    for entry in predictions:
+        prediction_array = entry.get("prediction", {}).get("prediction", [])
+        if isinstance(prediction_array, list) and prediction_array:
+            return [f"node_{i:02d}" for i in range(len(prediction_array))]
+    return []
+
+# ------------------ Prepare parsed prediction history ------------------
+def parse_predictions(raw_data, node_ids):
+    history = {fw_id: {node_id: [] for node_id in node_ids} for fw_id in fw_ids}
+
+    if not raw_data or not isinstance(raw_data, list):
+        return history
+
+    for pred in raw_data:
+        fw = pred.get("fw")
+        timestamp = pred.get("timestamp")
+        fw_id = f"FW_{fw}"
+        if fw_id not in history:
+            continue
+        scores = pred.get("prediction", {}).get("prediction", [])
+        if len(scores) != len(node_ids):
+            continue
+
+        for i, node_id in enumerate(node_ids):
+            history[fw_id][node_id].append({
+                "timestamp": timestamp,
+                "score": scores[i]
+            })
+
+    for fw_data in history.values():
+        for series in fw_data.values():
+            series.sort(key=lambda x: x["timestamp"], reverse=True)
+
+    return history
+
+# ------------------ Sidebar & Layout ------------------
 st.sidebar.title("Dashboard: Rack")
 selected_rack_id = st.sidebar.selectbox("Select Rack", rack_ids)
-selected_rack = next(r for r in rack_data if r["id"] == selected_rack_id)
-
 st.title(f"Rack: {selected_rack_id} - GNN Anomaly & Timing Dashboard")
 
 tab1, tab2 = st.tabs(["🔍 Anomaly Visualization", "⏱️ GNN Timing Analysis"])
+
+# ------------------ Fetch & Prepare Data ------------------
+raw_predictions = fetch_predictions(selected_rack_id)
+prediction_entries = raw_predictions.get("predictions", [])
+node_ids = extract_node_ids(prediction_entries)
+history = parse_predictions(prediction_entries, node_ids)
 
 # ------------------ Tab 1: Anomaly Visualization ------------------
 with tab1:
     st.subheader("Latest Prediction Scores Heatmap")
 
-    # Create matrix for latest scores and binary anomaly flags
     latest_scores = np.zeros((len(node_ids), len(fw_ids)), dtype=float)
     latest_anomaly = np.zeros((len(node_ids), len(fw_ids)), dtype=int)
 
+    all_timestamps = []
+    for fw_id in fw_ids:
+        for node_id in node_ids:
+            if history[fw_id][node_id]:
+                all_timestamps.append(history[fw_id][node_id][0]["timestamp"])
+
+    if all_timestamps:
+        latest_overall_timestamp = max(all_timestamps)
+        latest_overall_datetime = datetime.fromisoformat(latest_overall_timestamp)
+        st.markdown(f"Latest Timestamp Across Rack {selected_rack_id}: **{latest_overall_datetime} UTC**")
+    else:
+        st.warning("No prediction data available yet.")
+
     for fw_idx, fw_id in enumerate(fw_ids):
         for node_idx, node_id in enumerate(node_ids):
-            time_series = selected_rack["history"][fw_id][node_id]
-            latest_point = time_series[0]
-            score = latest_point["score"]
-            latest_scores[node_idx, fw_idx] = score
-            latest_anomaly[node_idx, fw_idx] = int(score < threshold)
+            time_series = history[fw_id][node_id]
+            if time_series:
+                score = time_series[0]["score"]
+                latest_scores[node_idx, fw_idx] = score
+                # Flipped anomaly logic: anomaly if score > threshold
+                latest_anomaly[node_idx, fw_idx] = int(score > threshold)
+            else:
+                latest_scores[node_idx, fw_idx] = np.nan
 
     fig = go.Figure(data=go.Heatmap(
         z=latest_scores,
@@ -77,39 +127,40 @@ with tab1:
         yaxis_title="Node"
     )
     st.plotly_chart(fig, use_container_width=True)
-    st.markdown(f"**Anomaly threshold:** {threshold} (Scores below are anomalous)")
+    st.markdown(f"**Anomaly threshold:** {threshold} (Scores above are anomalous)")
 
-    # Time series viewer
-    st.subheader("View detailed time series for a node and forecast window")
+    # Time Series View
+    st.subheader("View Detailed Time Series for a Node and Forecast Window")
     selected_fw = st.selectbox("Forecast Window", fw_ids)
     selected_node = st.selectbox("Node", node_ids)
 
-    df = pd.DataFrame(selected_rack["history"][selected_fw][selected_node])
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    df['anomaly'] = df['score'] < threshold
+    df = pd.DataFrame(history[selected_fw][selected_node])
+    if not df.empty:
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        # Flipped anomaly logic here as well
+        df['anomaly'] = df['score'] > threshold
 
-    fig2 = px.line(df, x='timestamp', y='score', title=f"{selected_fw} - {selected_node} Time Series",
-                   markers=True, labels={'score': 'Model Score'})
-    fig2.update_layout(height=400, yaxis=dict(range=[0, 0.3]))
+        fig2 = px.line(df, x='timestamp', y='score', title=f"{selected_fw} - {selected_node} Time Series",
+                       markers=True, labels={'score': 'Model Score'})
+        fig2.update_layout(height=400, yaxis=dict(range=[0, 1]))
+        fig2.add_trace(go.Scatter(
+            x=df.loc[df['anomaly'], 'timestamp'],
+            y=df.loc[df['anomaly'], 'score'],
+            mode='markers',
+            marker=dict(color='red', size=8),
+            name='Anomalies'
+        ))
+        fig2.add_hline(y=threshold, line_dash="dash", line_color="red",
+                       annotation_text="Anomaly Threshold", annotation_position="bottom right")
+        st.plotly_chart(fig2, use_container_width=True)
+    else:
+        st.info(f"No time series data for {selected_fw} / {selected_node}.")
 
-    fig2.add_trace(go.Scatter(
-        x=df.loc[df['anomaly'], 'timestamp'],
-        y=df.loc[df['anomaly'], 'score'],
-        mode='markers',
-        marker=dict(color='red', size=8),
-        name='Anomalies'
-    ))
-
-    fig2.add_hline(y=threshold, line_dash="dash", line_color="red",
-                   annotation_text="Anomaly Threshold", annotation_position="bottom right")
-
-    st.plotly_chart(fig2, use_container_width=True)
-    
 # ------------------ Tab 2: GNN Timing Analysis ------------------
 with tab2:
     st.subheader(f"GNN Execution Times per Step for Rack {selected_rack_id}")
 
-    # ------------------ Timing Mock Data ------------------
+    # Dummy/mock timing data — replace with backend timings if available
     timing_data = []
     for fw in fw_ids:
         timing_data.append({
@@ -126,9 +177,8 @@ with tab2:
     fig_timing.update_layout(height=500)
     st.plotly_chart(fig_timing, use_container_width=True)
 
-    # ------------------ Hardware Metrics Mock Data ------------------
+    # Hardware metrics mock
     st.subheader("Hardware Metrics During Inference")
-
     hw_data = pd.DataFrame({
         "FW": fw_ids,
         "GPU Power (W)": np.random.uniform(60, 120, len(fw_ids)).round(1),

@@ -11,7 +11,7 @@ services:
     volumes:
       - ./data/m100_aggregated:/data      # Mount data directory
       - ./logs:/app/logs                  # Mount logs directory
-      - ./storage:/app/storage
+      # - ./storage:/app/storage
     restart: unless-stopped
   frontend:
     build: ./frontend
