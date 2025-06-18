@@ -9,7 +9,7 @@ services:
     depends_on:
       - gnn_inference
     volumes:
-      - ./data/m100_aggregated:/data      # Mount data directory
+      - /mnt/m100/m100_aggregated:/data  
       - ./logs:/app/logs                  # Mount logs directory
       # - ./storage:/app/storage
     restart: unless-stopped
@@ -20,7 +20,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./data/m100_aggregated:/data  # mount as /data
+      - /mnt/m100/m100_aggregated:/data  # mount as /data
   gnn_inference:
     build:
       context: ./gnn_inference
@@ -31,8 +31,8 @@ services:
       - PYTHONUNBUFFERED=1
     volumes:
       - ./gnn_inference/GNN_models:/app/GNN_models     # Mount models from host
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - capabilities: [gpu]
