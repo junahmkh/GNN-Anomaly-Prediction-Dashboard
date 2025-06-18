@@ -11,7 +11,9 @@ from data_preprocessing import pre_process
 
 app = FastAPI()
 
-rack_ids = [0, 2, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 22, 24, 25, 26, 28, 29, 30, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48]
+#rack_ids = [0, 2, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 22, 24, 25, 26, 28, 29, 30, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48]
+rack_ids = [0, 2, 8]
+
 log_dir = "/app/logs"
 data_dir = "/app/storage"
 os.makedirs(log_dir, exist_ok=True)
