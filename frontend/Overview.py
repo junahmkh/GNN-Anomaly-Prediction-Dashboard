@@ -7,7 +7,7 @@ import time
 # ------------------ Constants ------------------
 fw_values = [4, 6, 12, 24, 32, 64, 96, 192, 288]
 fw_ids = [f"FW_{fw}" for fw in fw_values]
-rack_ids = ["0", "2", "8"]
+rack_ids = [0,2,8,9,10]
 #rack_ids = [0, 2, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 22, 24, 25, 26, 28, 29, 30, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48]
 
 #threshold = 0.1
@@ -101,9 +101,10 @@ for rack_idx, rack_id in enumerate(rack_ids):
 valid_timestamps = [ts for ts in all_latest_timestamps if ts is not None]
 if valid_timestamps:
     overall_latest = max(valid_timestamps)
-    st.write(f"#### Current Timestamp: {overall_latest}")
+    #st.write(f"#### Current Timestamp: {overall_latest}")
+    st.markdown(f"🕒 **Current Timestamp:** `{overall_latest}`")
 else:
-    st.write("#### No predictions available yet.")
+    st.warning("No predictions available yet.")
 
 # ------------------ Plot Heatmap ------------------
 fig = go.Figure(data=go.Heatmap(
@@ -120,8 +121,8 @@ fig = go.Figure(data=go.Heatmap(
 ))
 
 fig.update_layout(
-    height=600,
-    title="Anomaly Heatmap",
+    height=800,
+    title="Heatmap of Anomaly Counts Across Racks and Future Windows",
     xaxis_title="Future Window",
     yaxis_title="Rack",
     yaxis=dict(

@@ -11,7 +11,7 @@ st.set_page_config(layout="wide", page_title="GNN Inference: Anomaly Prediction 
 
 # ------------------ Constants ------------------
 backend_url = "http://backend:8001"
-rack_ids = ["0", "2", "8"]
+rack_ids = [0,2,8,9,10]
 #rack_ids = [0, 2, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 22, 24, 25, 26, 28, 29, 30, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48]
 
 fw_values = [4,6,12,24,32,64,96,192,288]
@@ -48,7 +48,8 @@ def extract_node_ids(predictions):
     for entry in predictions:
         prediction_array = entry.get("prediction", {}).get("prediction", [])
         if isinstance(prediction_array, list) and prediction_array:
-            return [f"node_{i:02d}" for i in range(len(prediction_array))]
+            return [f"{i:02d}" for i in range(len(prediction_array))]
+            #return [f"node_{i:02d}" for i in range(len(prediction_array))]
     return []
 
 # ------------------ Prepare parsed prediction history ------------------
@@ -85,7 +86,7 @@ st.sidebar.title("Dashboard: Rack")
 selected_rack_id = st.sidebar.selectbox("Select Rack", rack_ids)
 st.title(f"Dashboard : Rack {selected_rack_id}")
 
-tab1, tab2 = st.tabs(["🔍 Anomaly Visualization", "⏱️ Timing Analysis"])
+tab1, tab2 = st.tabs(["🔍 Anomaly Visualization", "⏱️ Inference Time"])
 
 # ------------------ Fetch & Prepare Data ------------------
 raw_predictions = fetch_predictions(selected_rack_id)
@@ -109,7 +110,8 @@ with tab1:
     if all_timestamps:
         latest_overall_timestamp = max(all_timestamps)
         latest_overall_datetime = datetime.fromisoformat(latest_overall_timestamp)
-        st.markdown(f"Latest Timestamp **{latest_overall_datetime} UTC**")
+        #st.markdown(f"Latest Timestamp **{latest_overall_datetime} UTC**")
+        st.markdown(f"🕒 **Current Timestamp:** `{latest_overall_datetime}`")
     else:
         st.warning("No prediction data available yet.")
 
@@ -166,7 +168,7 @@ with tab1:
     ))
 
     fig.update_layout(
-        height=600,
+        height=800,
         yaxis_autorange='reversed',
         #title="Binary Anomaly Heatmap (Nodes vs Future Windows)",
         xaxis_title="Future Window",
@@ -228,7 +230,6 @@ with tab1:
 # ------------------ Tab 2: GNN Timing Analysis ------------------
 with tab2:
     try:
-         # Hardware metrics mock
         st.subheader("Time Metrics During Inference - Per Future Window")
 
         url = backend_url + f"/timings/{selected_rack_id}/latest"
@@ -236,11 +237,20 @@ with tab2:
         response.raise_for_status()
         data = response.json()
         timing_data = data["timings"]
+        latest_ts = data["timestamp"]  # Extract latest timestamp
 
         if not timing_data:
             st.warning("No timing data available for the selected rack.")
         else:
-            # Prepare DataFrame
+            st.markdown(f"🕒 **Current Timestamp:** `{latest_ts}`")
+            # Use the first row to get shared fetch/preprocess times
+            common_fetch_time = timing_data[0]["Data Fetch (ms)"]
+            common_preprocess_time = timing_data[0]["Preprocessing (ms)"]
+
+            st.markdown(f"**🗂️ Data Fetch Time:** {common_fetch_time} ms")
+            st.markdown(f"**⚙️ Preprocessing Time:** {common_preprocess_time} ms")
+
+            # Prepare DataFrame for Inference
             df_timing = pd.DataFrame(timing_data)
             df_timing["FW"] = df_timing["FW"].astype(int)
             df_timing = df_timing.sort_values("FW")
@@ -249,28 +259,25 @@ with tab2:
             df_timing["FW"] = df_timing["FW"].map(lambda fw: f"FW_{fw}")
             fw_ids = df_timing["FW"].tolist()
 
-            df_timing = df_timing.drop(columns=["timestamp"])
+            # Prepare only inference time
+            df_inference = df_timing[["FW", "Inference (ms)"]].copy()
+            df_inference = df_inference.rename(columns={"Inference (ms)": "Time (ms)"})
 
-            # Melt for long format
-            df_melted = df_timing.melt(id_vars=["FW"], var_name="Step", value_name="Time (ms)")
-
-            # Show each step as a separate chart
-            for step in df_melted["Step"].unique():
-                step_df = df_melted[df_melted["Step"] == step]
-                fig = px.bar(
-                    step_df,
-                    x="FW",
-                    y="Time (ms)",
-                    title=f"Time: {step}",
-                    category_orders={"FW": fw_ids}
-                )
-                fig.update_layout(
-                    height=400,
-                    xaxis_title="Future Window",
-                    yaxis_title="Execution Time [ms]",
-                    showlegend=False
-                )
-                st.plotly_chart(fig, use_container_width=True)
+            # Plot GNN Inference time bar chart
+            fig = px.bar(
+                df_inference,
+                x="FW",
+                y="Time (ms)",
+                title="🧠 GNN Inference",
+                category_orders={"FW": fw_ids}
+            )
+            fig.update_layout(
+                height=400,
+                xaxis_title="Future Window",
+                yaxis_title="Inference Time [ms]",
+                showlegend=False
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
     except requests.RequestException as e:
         st.error(f"Failed to fetch timing data: {e}")

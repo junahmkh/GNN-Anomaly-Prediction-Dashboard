@@ -4,7 +4,7 @@ from model import anomaly_anticipation
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-rack_ids = [0, 2, 8]
+rack_ids = [0,2,8,9,10]
 #rack_ids = [0, 2, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 22, 24, 25, 26, 28, 29, 30, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48]
 
 def load_all_models(base_dir = "/app/GNN_models"):
