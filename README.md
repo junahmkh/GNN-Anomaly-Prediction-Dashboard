@@ -1,1 +1,1 @@
-# gnn_dashboard
+# Dashboard: GNN-Based Anomaly predicition models
