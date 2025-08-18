@@ -100,5 +100,3 @@ This project is licensed under the MIT License.
 See [LICENSE](LICENSE) for details.
 
 ---
-
-👉 Do you want me to also include **example screenshots of the dashboard** (with placeholders) in the README so it looks more polished?
