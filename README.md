@@ -1,5 +1,3 @@
-Got it 👍 — I’ll draft a **README.md** for your repo that explains setup, usage, and contribution. Here’s a clean, structured version you can drop into your project root:
-
 ---
 
 # GNN Anomaly Prediction Dashboard
