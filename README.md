@@ -62,7 +62,7 @@ http://localhost:<port>
 ## 📊 Dataset
 
 The dashboard uses the **M100 dataset**.
-You can download it from [Zenodo](https://zenodo.org/records/7541722)).
+You can download it from [Zenodo](https://zenodo.org/records/7541722).
 Place the dataset under the `data/` directory before running the app.
 
 ---
