@@ -1,31 +1,35 @@
-Here’s the README in proper **Markdown** format so you can copy-paste it directly into `README.md`:
+Got it 👍 — I’ll draft a **README.md** for your repo that explains setup, usage, and contribution. Here’s a clean, structured version you can drop into your project root:
 
-````markdown
+---
+
 # GNN Anomaly Prediction Dashboard
 
-A dashboard application for anomaly detection using Graph Neural Networks (GNNs).  
+A dashboard application for anomaly detection using Graph Neural Networks (GNNs).
 This project is containerized with **Docker Compose**, making it easy to run locally or deploy.
 
 ---
 
 ## 🚀 Features
-- **GNN-based anomaly prediction** with pre-trained models  
-- **Interactive dashboard** to visualize anomalies  
-- **Modular architecture** with separate services for:
-  - `frontend` (UI)
-  - `backend` (API)
-  - `gnn_inference` (model inference service)
-  - `storage` and `data` support  
+
+* **GNN-based anomaly prediction** with pre-trained models
+* **Interactive dashboard** to visualize anomalies
+* **Modular architecture** with separate services for:
+
+  * `frontend` (UI)
+  * `backend` (API)
+  * `gnn_inference` (model inference service)
+  * `storage` and `data` support
 
 ---
 
 ## 📦 Getting Started
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/junahmkh/GNN-Anomaly-Prediction-Dashboard.git
 cd GNN-Anomaly-Prediction-Dashboard
-````
+```
 
 ### 2. Install Requirements
 
@@ -60,7 +64,7 @@ http://localhost:<port>
 ## 📊 Dataset
 
 The dashboard uses the **M100 dataset**.
-You can download it from [Zenodo]([https://zenodo.org/](https://zenodo.org/records/7541722)).
+You can download it from [Zenodo]([https://zenodo.org/](https://zenodo.org/records/7541722)) (link provided in the repo).
 Place the dataset under the `data/` directory before running the app.
 
 ---
@@ -97,4 +101,6 @@ GNN-Anomaly-Prediction-Dashboard/
 This project is licensed under the MIT License.
 See [LICENSE](LICENSE) for details.
 
-```
+---
+
+👉 Do you want me to also include **example screenshots of the dashboard** (with placeholders) in the README so it looks more polished?
