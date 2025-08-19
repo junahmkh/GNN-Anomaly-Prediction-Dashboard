@@ -55,7 +55,7 @@ Once services are up, open your browser at:
 http://localhost:<port>
 ```
 
-> 🔍 Check the `docker-compose.yml` file for the exact frontend port mapping.
+> 🔍 Check the `docker-compose.yml` file for the exact host port mapping of each service (e.g., frontend) and update accordingly to avoid any conflict with existing services.
 
 ---
 
