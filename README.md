@@ -5,7 +5,6 @@
 A dashboard application for anomaly detection using Graph Neural Networks (GNNs).
 This project is containerized with **Docker Compose**, making it easy to run locally or deploy.
 
-
 This application provides anomaly prediction for the **Marconi100 supercomputer** using the **GRAAFE models** proposed by *Molan et al.*  
 👉 Full article available at: [GRAAFE](https://www.sciencedirect.com/science/article/abs/pii/S0167739X24003327)
 
