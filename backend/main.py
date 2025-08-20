@@ -115,9 +115,9 @@ def run_scheduled_prediction():
 @app.on_event("startup")
 def start_scheduler():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(run_scheduled_prediction, "interval", minutes=1)
+    scheduler.add_job(run_scheduled_prediction, "interval", minutes=15)
     scheduler.start()
-    logger.info("Scheduler started — running prediction every 1 minute")
+    logger.info("Scheduler started — running prediction every 15 minute")
 
 
 @app.get("/results/{rack}")
