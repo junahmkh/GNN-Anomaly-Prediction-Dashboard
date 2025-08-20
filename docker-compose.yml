@@ -9,7 +9,7 @@ services:
     depends_on:
       - gnn_inference
     volumes:
-      - /mnt/m100/m100_aggregated:/data  
+      - ./data/m100_aggregated:/data  
       - ./logs:/app/logs                  # Mount logs directory
       # - ./storage:/app/storage
     restart: unless-stopped
@@ -20,7 +20,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - /mnt/m100/m100_aggregated:/data  # mount as /data
+      - ./data/m100_aggregated:/data  # mount as /data
   gnn_inference:
     build:
       context: ./gnn_inference
