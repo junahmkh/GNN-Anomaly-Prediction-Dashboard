@@ -53,17 +53,6 @@ Provides a **web interface** with two pages:
 
 ---
 
-## 🚀 Features
-
-* **GNN-based anomaly prediction** with pre-trained models
-* **Interactive dashboard** to visualize anomalies
-* **Modular architecture** with separate services for:
-
-  * `frontend` (UI)
-  * `backend` (API)
-  * `gnn_inference` (model inference service)
-  * `storage` and `data` support
-
 ---
 
 ## 📦 Getting Started
