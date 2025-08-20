@@ -1,5 +1,3 @@
----
-
 # GNN Anomaly Prediction Dashboard
 
 A dashboard application for anomaly detection using Graph Neural Networks (GNNs).
@@ -7,8 +5,6 @@ This project is containerized with **Docker Compose**, making it easy to run loc
 
 This application provides anomaly prediction for the **Marconi100 supercomputer** using the **GRAAFE models** proposed by *Molan et al.*  
 👉 Full article available at: https://www.sciencedirect.com/science/article/abs/pii/S0167739X24003327
-
----
 
 ## 📊 Model Overview
 - The models are **rack-wise Graph Neural Networks (GNNs)** trained on telemetry data from the Marconi100 data center at **Cineca**.  
