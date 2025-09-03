@@ -98,7 +98,12 @@ http://localhost:<port>
 
 The dashboard uses the **M100 dataset**.
 You can download it from [Zenodo](https://zenodo.org/records/7541722).
-Place the dataset under the `data/m100_aggregated/` directory before running the app.
+
+After downloading the .tar files, unzip them. Each .tar file is prefixed with its M100 data center rack ID. For testing purposes, you may use a subset of the dataset-- we recommend racks IDs [0, 2, 8, 9, 10].
+
+If you choose to use use other rack_ids you will need to update their definitions in both `backend/main.py` file and `gnn_inference/load_models.py` file. 
+
+Finally place the extracted folder inside the `data/m100_aggregated/` directory before running the app.
 
 ---
 
