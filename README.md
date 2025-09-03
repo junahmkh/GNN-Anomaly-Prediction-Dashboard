@@ -70,6 +70,7 @@ Make sure you have the following installed:
 
 * [Docker](https://docs.docker.com/get-docker/)
 * [Docker Compose](https://docs.docker.com/compose/)
+* Test data (see instructions in the Dataset section below)
 
 ### 3. Start the Application
 
